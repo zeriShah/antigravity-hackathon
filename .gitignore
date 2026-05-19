@@ -1,0 +1,46 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+build/
+dist/
+wheels/
+
+# Node / Expo
+node_modules/
+.expo/
+web-build/
+expo-env.d.ts
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.tsbuildinfo
+
+# Native mobile generated output
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.claude/
