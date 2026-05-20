@@ -1,0 +1,8 @@
+import sys
+from pathlib import Path
+
+# Add parent directory to Python path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import the FastAPI app instance
+from app.main import app
