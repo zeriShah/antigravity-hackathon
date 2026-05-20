@@ -152,8 +152,8 @@ export default function ResultScreen() {
         />
         {/* Summary Card */}
         <AppCard accent elevated>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+          <View style={{ flex: 1, marginRight: 8, minWidth: 150 }}>
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Domain</Text>
             <Text style={{ fontSize: 18, fontWeight: '800', color: '#0F172A' }}>{result!.domain}</Text>
           </View>
@@ -231,7 +231,7 @@ export default function ResultScreen() {
           >
             <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>✓ Approve Action</Text>
           </TouchableOpacity>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
             <TouchableOpacity
               onPress={handleModifyAction}
               style={{ flex: 1, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#CBD5E1', padding: 14, borderRadius: 12, alignItems: 'center' }}
@@ -448,7 +448,7 @@ export default function ResultScreen() {
     return (
       <View>
         {/* Decision Source Banner */}
-        <View style={{ backgroundColor: '#EEF2FF', padding: 12, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#C7D2FE', flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ backgroundColor: '#EEF2FF', padding: 12, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#C7D2FE', flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
           <Text style={{ fontSize: 16, marginRight: 8 }}>ℹ️</Text>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#4F46E5', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Simulation Source</Text>
@@ -595,82 +595,102 @@ export default function ResultScreen() {
 
         const handleExport = async () => {
           try {
-            // Build HTML content for PDF
+            // Build a very premium HTML template for the PDF
             let htmlContent = `
-              <html>
-                <head>
-                  <style>
-                    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color: #333; }
-                    h1 { color: #4F46E5; }
-                    h2 { color: #1E3A8A; border-bottom: 1px solid #E2E8F0; padding-bottom: 5px; margin-top: 20px; }
-                    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
-                    .priority-high { background: #FEE2E2; color: #DC2626; }
-                    .priority-med { background: #FEF3C7; color: #D97706; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #E2E8F0; }
-                    th { background-color: #F8FAFC; }
-                  </style>
-                </head>
-                <body>
-                  <h1>Action Pack: ${pack.action_title}</h1>
-                  <p><span class="badge ${pack.priority.toLowerCase() === 'high' || pack.priority.toLowerCase() === 'critical' ? 'priority-high' : 'priority-med'}">${pack.priority} Priority</span></p>
-                  
-                  <table>
-                    <tr><th>Approval Status</th><td>${currentStatus}</td></tr>
-                    <tr><th>Responsible Team</th><td>${pack.responsible_team}</td></tr>
-                    <tr><th>Estimated Completion</th><td>${pack.estimated_completion}</td></tr>
-                  </table>
+              <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #1E293B; max-width: 800px; margin: 0 auto; background-color: #FFFFFF;">
+                <div style="text-align: center; border-bottom: 2px solid #E2E8F0; padding-bottom: 20px; margin-bottom: 30px;">
+                  <h1 style="color: #4F46E5; margin-bottom: 5px; font-size: 28px;">Insight2Action AI</h1>
+                  <h2 style="color: #64748B; margin-top: 0; font-weight: 500; font-size: 18px;">Executive Action Report</h2>
+                </div>
+                
+                <h2 style="color: #0F172A; font-size: 24px; margin-bottom: 15px;">${pack.action_title}</h2>
+                <div style="margin-bottom: 25px;">
+                  <span style="display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; background: ${pack.priority.toLowerCase() === 'high' || pack.priority.toLowerCase() === 'critical' ? '#FEE2E2' : '#FEF3C7'}; color: ${pack.priority.toLowerCase() === 'high' || pack.priority.toLowerCase() === 'critical' ? '#DC2626' : '#D97706'};">${pack.priority} Priority</span>
+                  <span style="display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; background: ${isApproved ? '#F0FDF4' : '#F8FAFC'}; color: ${isApproved ? '#16A34A' : '#475569'}; margin-left: 10px;">Status: ${currentStatus}</span>
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; background: #F8FAFC; border-radius: 8px; overflow: hidden;">
+                  <tr>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #E2E8F0; font-weight: 600; color: #475569; width: 30%;">Responsible Team</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #0F172A;">${pack.responsible_team}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 16px; font-weight: 600; color: #475569;">Estimated Completion</td>
+                    <td style="padding: 12px 16px; font-weight: 700; color: #0F172A;">${pack.estimated_completion}</td>
+                  </tr>
+                </table>
 
-                  <h2>Summary</h2>
-                  <p>${pack.action_summary}</p>
+                <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Executive Summary</h3>
+                <p style="line-height: 1.6; color: #334155; font-size: 15px;">${pack.action_summary}</p>
 
-                  <h2>Generated Artifact (${pack.generated_artifact.type})</h2>
-                  <h3>${pack.generated_artifact.title}</h3>
-                  <p>${pack.generated_artifact.content}</p>
+                <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Generated Artifact: ${pack.generated_artifact.type}</h3>
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                  <h4 style="margin-top: 0; color: #0F172A;">${pack.generated_artifact.title}</h4>
+                  <p style="line-height: 1.6; color: #334155; margin-bottom: 0;">${pack.generated_artifact.content}</p>
+                </div>
 
-                  <h2>Next Steps</h2>
-                  <ol>
-                    ${pack.next_steps.map(step => `<li>${step}</li>`).join('')}
-                  </ol>
+                <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Actionable Next Steps</h3>
+                <ol style="line-height: 1.8; color: #334155; padding-left: 20px;">
+                  ${pack.next_steps.map(step => `<li style="margin-bottom: 8px;">${step}</li>`).join('')}
+                </ol>
             `;
 
             if (result!.counterfactual) {
               htmlContent += `
-                <h2>Counterfactual Comparison</h2>
-                <h3>If Action Taken:</h3>
-                <ul>
-                  <li><b>Summary:</b> ${result!.counterfactual.if_action_taken.summary}</li>
-                  <li><b>Projected Outcome:</b> ${result!.counterfactual.if_action_taken.projected_outcome}</li>
-                </ul>
-                <h3>If No Action:</h3>
-                <ul>
-                  <li><b>Summary:</b> ${result!.counterfactual.if_no_action.summary}</li>
-                  <li><b>Projected Outcome:</b> ${result!.counterfactual.if_no_action.projected_outcome}</li>
-                </ul>
+                <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Counterfactual Analysis</h3>
+                <div style="display: flex; gap: 20px; margin-top: 15px;">
+                  <div style="flex: 1; background: #F0FDF4; border: 1px solid #BBF7D0; padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #16A34A; margin-top: 0; margin-bottom: 10px;">If Action Taken</h4>
+                    <p style="font-size: 14px; margin-bottom: 8px;"><b>Summary:</b><br/>${result!.counterfactual.if_action_taken.summary}</p>
+                    <p style="font-size: 14px; margin-bottom: 0;"><b>Projected Outcome:</b><br/>${result!.counterfactual.if_action_taken.projected_outcome}</p>
+                  </div>
+                  <div style="flex: 1; background: #FEF2F2; border: 1px solid #FECACA; padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #DC2626; margin-top: 0; margin-bottom: 10px;">If No Action</h4>
+                    <p style="font-size: 14px; margin-bottom: 8px;"><b>Summary:</b><br/>${result!.counterfactual.if_no_action.summary}</p>
+                    <p style="font-size: 14px; margin-bottom: 0;"><b>Projected Outcome:</b><br/>${result!.counterfactual.if_no_action.projected_outcome}</p>
+                  </div>
+                </div>
               `;
             }
 
             const sim = result!.simulation as any;
             if (sim && sim.before_state && sim.after_state) {
               htmlContent += `
-                <h2>Simulation Metrics</h2>
-                <h3>Before State:</h3>
-                <ul>
-                  ${Object.entries(sim.before_state).map(([k, v]) => `<li><b>${k}:</b> ${v}</li>`).join('')}
-                </ul>
-                <h3>After State:</h3>
-                <ul>
-                  ${Object.entries(sim.after_state).map(([k, v]) => `<li><b>${k}:</b> ${v}</li>`).join('')}
-                </ul>
+                <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Simulation Metrics</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;">
+                  <tr style="background: #F8FAFC;">
+                    <th style="padding: 10px; border: 1px solid #E2E8F0; text-align: left;">Metric</th>
+                    <th style="padding: 10px; border: 1px solid #E2E8F0; text-align: left;">Before State</th>
+                    <th style="padding: 10px; border: 1px solid #E2E8F0; text-align: left;">After State</th>
+                  </tr>
+                  ${Object.keys(sim.before_state).map(k => `
+                    <tr>
+                      <td style="padding: 10px; border: 1px solid #E2E8F0; font-weight: 600; text-transform: capitalize;">${k.replace(/_/g, ' ')}</td>
+                      <td style="padding: 10px; border: 1px solid #E2E8F0; color: #DC2626;">${sim.before_state[k]}</td>
+                      <td style="padding: 10px; border: 1px solid #E2E8F0; color: #16A34A; font-weight: bold;">${sim.after_state[k] || 'N/A'}</td>
+                    </tr>
+                  `).join('')}
+                </table>
               `;
             }
 
-            htmlContent += `
+            htmlContent += `</div>`;
+
+            // Wrap in basic HTML tags for Print API
+            const fullHtml = `
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+                </head>
+                <body>
+                  ${htmlContent}
                 </body>
               </html>
             `;
 
-            // Text fallback content for platforms that don't support PDF generation well
+            // Fallback plain text for native share failure
             let textContent = `# Action Pack: ${pack.action_title}\n\n`;
             textContent += `**Priority:** ${pack.priority}\n`;
             textContent += `**Approval Status:** ${currentStatus}\n`;
@@ -681,11 +701,34 @@ export default function ResultScreen() {
             pack.next_steps.forEach((step, idx) => { textContent += `${idx + 1}. ${step}\n`; });
 
             if (Platform.OS === 'web') {
-              // On web, just print the PDF
-              await Print.printAsync({ html: htmlContent });
+              // Inject html2pdf.js dynamically to trigger a direct download instead of a print popup
+              const scriptId = 'html2pdf-script';
+              const downloadPdf = () => {
+                const element = document.createElement('div');
+                element.innerHTML = htmlContent;
+                // Add some extra CSS to fix pdf rendering cuts
+                element.style.width = '800px'; 
+                (window as any).html2pdf().set({
+                  margin: 10,
+                  filename: 'Insight2Action_Report.pdf',
+                  image: { type: 'jpeg', quality: 0.98 },
+                  html2canvas: { scale: 2 },
+                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                }).from(element).save();
+              };
+
+              if (!document.getElementById(scriptId)) {
+                const script = document.createElement('script');
+                script.id = scriptId;
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                script.onload = downloadPdf;
+                document.head.appendChild(script);
+              } else {
+                downloadPdf();
+              }
             } else {
-              // On native, generate PDF and share
-              const { uri } = await Print.printToFileAsync({ html: htmlContent });
+              // On native (iOS/Android), generate PDF file and open the native Share Sheet
+              const { uri } = await Print.printToFileAsync({ html: fullHtml });
               const isSharingAvailable = await Sharing.isAvailableAsync();
               
               if (isSharingAvailable) {
@@ -757,7 +800,7 @@ export default function ResultScreen() {
               ))}
 
               {/* Action Buttons */}
-              <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
                 <TouchableOpacity
                   onPress={() => setApprovalStatus(isApproved ? 'Pending Approval' : 'Approved')}
                   style={{
@@ -796,7 +839,7 @@ export default function ResultScreen() {
         Simulated Execution
       </Text>
       <AppCard elevated accent>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
           <View style={{
             backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#C7D2FE',
             paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8,
@@ -829,7 +872,7 @@ export default function ResultScreen() {
           </View>
           <View style={{ flex: 1, padding: 14 }}>
             <Text style={{ fontSize: 10, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 4 }}>Assigned Team</Text>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: '#0F172A' }} numberOfLines={1}>{result!.simulation.assigned_team}</Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#0F172A' }}>{result!.simulation.assigned_team}</Text>
           </View>
         </View>
       </AppCard>

@@ -36,7 +36,7 @@ export function ExecutiveSummaryCard({
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{domain_label}</Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <View style={styles.confidenceContainer}>
               <Text style={styles.confidenceText}>{confidencePercent}% Confident</Text>
             </View>
@@ -57,19 +57,19 @@ export function ExecutiveSummaryCard({
         <View style={styles.grid}>
           <View style={[styles.gridCell, styles.cellBorderRight, styles.cellBorderBottom]}>
             <Text style={styles.gridLabel}>Expected Impact</Text>
-            <Text style={styles.gridValue} numberOfLines={2}>{impact_summary}</Text>
+            <Text style={styles.gridValue}>{impact_summary}</Text>
           </View>
           <View style={[styles.gridCell, styles.cellBorderBottom]}>
             <Text style={styles.gridLabel}>Risk if No Action</Text>
-            <Text style={[styles.gridValue, { color: '#DC2626' }]} numberOfLines={2}>{risk_if_no_action}</Text>
+            <Text style={[styles.gridValue, { color: '#DC2626' }]}>{risk_if_no_action}</Text>
           </View>
           <View style={[styles.gridCell, styles.cellBorderRight]}>
             <Text style={styles.gridLabel}>Est. Completion</Text>
-            <Text style={styles.gridValue} numberOfLines={2}>{estimated_completion}</Text>
+            <Text style={styles.gridValue}>{estimated_completion}</Text>
           </View>
           <View style={styles.gridCell}>
             <Text style={styles.gridLabel}>Responsible Team</Text>
-            <Text style={styles.gridValue} numberOfLines={2}>{responsible_team}</Text>
+            <Text style={styles.gridValue}>{responsible_team}</Text>
           </View>
         </View>
       </View>
@@ -110,6 +110,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   badge: {
     backgroundColor: '#EEF2FF',

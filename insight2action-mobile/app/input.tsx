@@ -72,9 +72,9 @@ export default function InputScreen() {
 
       const file = result.assets[0];
       
-      // 2MB limit
-      if (file.size && file.size > 2 * 1024 * 1024) {
-        setErrorMsg('File too large. Maximum size is 2MB.');
+      // 70MB limit
+      if (file.size && file.size > 70 * 1024 * 1024) {
+        setErrorMsg('File too large. Maximum size is 70MB.');
         return;
       }
 

@@ -22,7 +22,7 @@ SUPPORTED_EXTENSIONS = {
 BINARY_EXTENSIONS = {'.xlsx', '.xls', '.docx', '.doc', '.pdf', '.pptx', '.ppt'}
 ALL_SUPPORTED = SUPPORTED_EXTENSIONS | BINARY_EXTENSIONS
 
-MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB
+MAX_FILE_SIZE = 70 * 1024 * 1024  # 70MB
 
 def extract_text_from_csv(raw_bytes: bytes) -> str:
     """Convert CSV bytes to a readable text table."""
@@ -140,7 +140,7 @@ async def analyze_file(
     # Read file bytes
     raw_bytes = await file.read()
     if len(raw_bytes) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail="File too large. Maximum size is 2MB.")
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 70MB.")
     if len(raw_bytes) == 0:
         raise HTTPException(status_code=400, detail="The uploaded file is empty.")
     
