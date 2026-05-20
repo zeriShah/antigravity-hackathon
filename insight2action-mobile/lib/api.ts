@@ -24,8 +24,8 @@ const getBaseUrl = () => {
     return 'http://localhost:8000'; 
   }
   
-  // Production URL would go here
-  return 'https://api.insight2action.example.com';
+  // Production URL - Vercel deployment
+  return 'https://insight2action-backend.vercel.app';
 };
 
 export const API_BASE_URL = getBaseUrl();
