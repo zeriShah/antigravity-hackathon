@@ -8,21 +8,21 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#4F46E5", // Indigo 600
-        primaryLight: "#818CF8",
-        secondary: "#10B981", // Emerald 500
-        background: "#F8FAFC", // Slate 50
-        card: "#FFFFFF",
-        text: "#0F172A", // Slate 900
-        textMuted: "#64748B", // Slate 500
-        border: "#E2E8F0",
-        danger: "#EF4444", // Red 500
-        warning: "#F59E0B" // Amber 500
+        brand: {
+          DEFAULT: "#4F46E5",
+          light: "#6366F1",
+          lighter: "#EEF2FF",
+          dark: "#3730A3",
+          50: "#EEF2FF",
+          100: "#E0E7FF",
+          500: "#6366F1",
+          600: "#4F46E5",
+          700: "#4338CA",
+        },
       },
       fontFamily: {
-        // Will use system fonts for simplicity, but can be expanded
         sans: ["System"],
-      }
+      },
     },
   },
   plugins: [],

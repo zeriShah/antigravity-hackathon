@@ -43,7 +43,6 @@ export async function analyzeContent(content: string): Promise<AnalyzeResponse> 
     });
 
     if (!response.ok) {
-      // Try to parse error message from backend if available
       const errorText = await response.text();
       let errorMessage = `API Error (${response.status})`;
       try {
@@ -54,7 +53,6 @@ export async function analyzeContent(content: string): Promise<AnalyzeResponse> 
             : JSON.stringify(errorJson.detail);
         }
       } catch (e) {
-        // Not a JSON error response, use the text
         if (errorText) errorMessage += `: ${errorText}`;
       }
       throw new Error(errorMessage);
@@ -64,7 +62,62 @@ export async function analyzeContent(content: string): Promise<AnalyzeResponse> 
     return data;
   } catch (error) {
     console.error('Failed to analyze content:', error);
-    // Rethrow to let the UI handle the error state
+    throw error;
+  }
+}
+
+export async function analyzeFile(file: { uri: string; name: string; type: string; file?: File | null }): Promise<AnalyzeResponse> {
+  try {
+    const formData = new FormData();
+    
+    if (Platform.OS === 'web') {
+      if (file.file) {
+        // Use the native File object directly
+        formData.append('file', file.file, file.name);
+      } else if (file.uri) {
+        // Fallback: fetch the blob URI and create a File
+        const response = await fetch(file.uri);
+        const blob = await response.blob();
+        const webFile = new File([blob], file.name, { type: file.type || 'application/octet-stream' });
+        formData.append('file', webFile, file.name);
+      } else {
+        throw new Error('No file data available');
+      }
+    } else {
+      // On native, construct the file object for FormData
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+      } as any);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/analyze-file`, {
+      method: 'POST',
+      body: formData,
+      // Don't set Content-Type header — fetch will set it with boundary for multipart
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `API Error (${response.status})`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.detail) {
+          errorMessage = typeof errorJson.detail === 'string' 
+            ? errorJson.detail 
+            : JSON.stringify(errorJson.detail);
+        }
+      } catch (e) {
+        if (errorText) errorMessage += `: ${errorText}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data: AnalyzeResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to analyze file:', error);
     throw error;
   }
 }

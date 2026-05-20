@@ -8,51 +8,82 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const features = [
-    { title: 'Extract Insight', desc: 'Identify core issues from messy text.', icon: '🧠' },
-    { title: 'Analyze Impact', desc: 'Determine severity and business risk.', icon: '⚡' },
-    { title: 'Simulate Action', desc: 'Generate a mock operational response.', icon: '🚀' },
+    { title: 'Smart Analysis', desc: 'AI-powered insights from any document or text.', icon: '🧠', color: '#4F46E5' },
+    { title: 'Impact Assessment', desc: 'Severity scoring and business risk evaluation.', icon: '📊', color: '#EA580C' },
+    { title: 'Action Planning', desc: 'Step-by-step improvement recommendations.', icon: '🎯', color: '#16A34A' },
+    { title: 'Live Simulation', desc: 'Mock ticket, alert, or dashboard generation.', icon: '🚀', color: '#7C3AED' },
   ];
 
   return (
     <ScreenContainer scroll>
-      <View className="flex-1 justify-center py-10">
-        <View className="items-center mb-10 mt-6">
-          <View className="w-20 h-20 bg-indigo-100 rounded-3xl items-center justify-center mb-6 shadow-sm border border-indigo-200">
-            <Text className="text-4xl">✨</Text>
+      <View style={{ flex: 1, justifyContent: 'center', paddingTop: 48, paddingBottom: 24 }}>
+        
+        {/* Hero Section */}
+        <View style={{ alignItems: 'center', marginBottom: 40 }}>
+          <View style={{ 
+            width: 72, height: 72, borderRadius: 20, 
+            backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#C7D2FE',
+            alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+            shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.12, shadowRadius: 16, elevation: 4,
+          }}>
+            <Text style={{ fontSize: 32 }}>✨</Text>
           </View>
-          <Text className="text-3xl font-extrabold text-slate-900 text-center mb-3">
-            Insight2Action <Text className="text-indigo-600">AI</Text>
+          
+          <Text style={{ fontSize: 32, fontWeight: '800', color: '#0F172A', textAlign: 'center', marginBottom: 4, letterSpacing: -0.8 }}>
+            Insight2Action
           </Text>
-          <Text className="text-base text-slate-500 text-center leading-relaxed px-4">
-            Turn unstructured content into clear decisions and simulated actions instantly.
+          <Text style={{ fontSize: 32, fontWeight: '800', color: '#4F46E5', textAlign: 'center', marginBottom: 12, letterSpacing: -0.8 }}>
+            AI Platform
+          </Text>
+          <Text style={{ fontSize: 15, color: '#64748B', textAlign: 'center', lineHeight: 23, paddingHorizontal: 16, fontWeight: '500' }}>
+            Transform unstructured data into actionable insights, recommendations, and simulated outcomes.
           </Text>
         </View>
 
-        <View className="mb-10">
+        {/* Feature Grid */}
+        <View style={{ marginBottom: 32 }}>
           {features.map((f, i) => (
-            <AppCard key={i} className="flex-row items-center p-4 mb-3 border-slate-100 bg-white shadow-sm">
-              <View className="w-12 h-12 rounded-2xl bg-slate-50 items-center justify-center mr-4 border border-slate-100">
-                <Text className="text-xl">{f.icon}</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-base font-bold text-slate-800 mb-1">{f.title}</Text>
-                <Text className="text-sm text-slate-500">{f.desc}</Text>
+            <AppCard key={i} elevated>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ 
+                  width: 48, height: 48, borderRadius: 14, 
+                  backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#F1F5F9',
+                  alignItems: 'center', justifyContent: 'center', marginRight: 16,
+                }}>
+                  <Text style={{ fontSize: 22 }}>{f.icon}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: '#0F172A', marginBottom: 3 }}>{f.title}</Text>
+                  <Text style={{ fontSize: 13, color: '#64748B', lineHeight: 18 }}>{f.desc}</Text>
+                </View>
+                <Text style={{ color: '#CBD5E1', fontSize: 18 }}>›</Text>
               </View>
             </AppCard>
           ))}
         </View>
 
-        <View className="mt-auto">
+        {/* CTA Buttons */}
+        <View style={{ gap: 10 }}>
           <AppButton 
             title="Start Analysis" 
+            icon="⚡"
+            size="lg"
             onPress={() => router.push('/input')} 
-            className="mb-3"
           />
           <AppButton 
             title="View History" 
+            icon="📋"
             variant="secondary"
             onPress={() => router.push('/history')} 
           />
+        </View>
+
+        {/* Footer Brand */}
+        <View style={{ alignItems: 'center', marginTop: 32 }}>
+          <Text style={{ fontSize: 11, color: '#CBD5E1', fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            Powered by AI Agents
+          </Text>
         </View>
       </View>
     </ScreenContainer>

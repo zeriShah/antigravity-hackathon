@@ -8,54 +8,51 @@ interface AgentTraceProps {
 
 export function AgentTrace({ result }: AgentTraceProps) {
   const steps = [
-    {
-      title: 'Content Understood',
-      description: 'Successfully parsed and classified unstructured content.',
-    },
-    {
-      title: 'Domain Detected',
-      description: `Mapped to ${result.domain} domain.`,
-    },
-    {
-      title: 'Insight Extracted',
-      description: result.key_insight,
-    },
-    {
-      title: 'Impact Analyzed',
-      description: result.impact,
-    },
-    {
-      title: 'Action Recommended',
-      description: result.recommended_action,
-    },
-    {
-      title: 'Action Simulated',
-      description: `[${result.simulation.type}] ${result.simulation.title}`,
-    },
+    { title: 'Content Parsed', description: 'Parsed and classified unstructured content.', icon: '📄', color: '#4F46E5' },
+    { title: 'Domain Detected', description: `Mapped to ${result.domain} domain.`, icon: '🔍', color: '#0284C7' },
+    { title: 'Insight Extracted', description: result.key_insight, icon: '💡', color: '#CA8A04' },
+    { title: 'Impact Analyzed', description: result.impact, icon: '📊', color: '#EA580C' },
+    { title: 'Action Recommended', description: result.recommended_action, icon: '🎯', color: '#16A34A' },
+    { title: 'Simulation Complete', description: `[${result.simulation.type}] ${result.simulation.title}`, icon: '🚀', color: '#7C3AED' },
   ];
 
   return (
-    <View className="mt-2 mb-6">
-      <Text className="text-sm font-bold text-slate-800 uppercase tracking-widest mb-4 px-2">Agent Workflow Trace</Text>
-      <AppCard noPadding className="p-0 overflow-hidden bg-slate-50/50">
-        <View className="px-5 py-6">
+    <View style={{ marginTop: 8, marginBottom: 16 }}>
+      <Text style={{ 
+        fontSize: 13, fontWeight: '700', color: '#0F172A', 
+        letterSpacing: 0.5, marginBottom: 14, paddingHorizontal: 4 
+      }}>
+        Agent Workflow Trace
+      </Text>
+      <AppCard noPadding elevated>
+        <View style={{ paddingHorizontal: 20, paddingVertical: 24 }}>
           {steps.map((step, index) => (
-            <View key={index} className="flex-row">
-              <View className="items-center mr-5">
-                <View className="w-6 h-6 rounded-full bg-indigo-100 items-center justify-center z-10 border border-indigo-200">
-                  <View className="w-2 h-2 rounded-full bg-indigo-600" />
+            <View key={index} style={{ flexDirection: 'row' }}>
+              <View style={{ alignItems: 'center', marginRight: 16 }}>
+                <View style={{ 
+                  width: 36, height: 36, borderRadius: 10, 
+                  backgroundColor: '#F8FAFC',
+                  borderWidth: 1, borderColor: '#E2E8F0',
+                  alignItems: 'center', justifyContent: 'center', zIndex: 10,
+                }}>
+                  <Text style={{ fontSize: 16 }}>{step.icon}</Text>
                 </View>
                 {index !== steps.length - 1 && (
-                  <View className="w-0.5 flex-1 bg-indigo-100 my-1" />
+                  <View style={{ width: 2, flex: 1, backgroundColor: '#F1F5F9', marginVertical: 4, borderRadius: 1 }} />
                 )}
               </View>
               
-              <View className={`flex-1 pt-0 ${index !== steps.length - 1 ? 'pb-6' : 'pb-0'}`}>
-                <View className="flex-row justify-between items-center mb-1">
-                  <Text className="text-sm font-bold text-slate-800">{step.title}</Text>
-                  <Text className="text-[9px] font-bold text-indigo-600 uppercase bg-indigo-50 px-2 py-0.5 rounded-sm border border-indigo-100 tracking-wider">Done</Text>
+              <View style={{ flex: 1, paddingBottom: index !== steps.length - 1 ? 20 : 0 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#0F172A' }}>{step.title}</Text>
+                  <View style={{ 
+                    backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0',
+                    paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6,
+                  }}>
+                    <Text style={{ fontSize: 9, fontWeight: '700', color: '#16A34A', textTransform: 'uppercase', letterSpacing: 0.5 }}>Done</Text>
+                  </View>
                 </View>
-                <Text className="text-sm text-slate-500 leading-relaxed" numberOfLines={2}>
+                <Text style={{ fontSize: 13, color: '#64748B', lineHeight: 19 }} numberOfLines={2}>
                   {step.description}
                 </Text>
               </View>

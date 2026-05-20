@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { AppHeader } from '../components/AppHeader';
@@ -66,27 +66,67 @@ export default function HistoryScreen() {
     }
   };
 
+  const getDomainIcon = (domain: string) => {
+    const d = domain.toLowerCase();
+    if (d.includes('cyber') || d.includes('security')) return '🔒';
+    if (d.includes('health') || d.includes('medical')) return '🏥';
+    if (d.includes('finance') || d.includes('money')) return '💰';
+    if (d.includes('education') || d.includes('academic')) return '🎓';
+    if (d.includes('logistics') || d.includes('supply')) return '📦';
+    if (d.includes('public')) return '🏛️';
+    if (d.includes('business')) return '💼';
+    return '📄';
+  };
+
   const renderItem = ({ item }: { item: AnalysisHistoryItem }) => (
     <TouchableOpacity activeOpacity={0.7} onPress={() => openResult(item)}>
-      <AppCard className="mb-4">
-        <View className="flex-row justify-between items-center mb-4">
-          <View className="bg-slate-100 px-2 py-1 rounded border border-slate-200">
-            <Text className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">{item.result.domain}</Text>
+      <AppCard elevated>
+        {/* Header */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{
+              width: 32, height: 32, borderRadius: 8,
+              backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#C7D2FE',
+              alignItems: 'center', justifyContent: 'center', marginRight: 10,
+            }}>
+              <Text style={{ fontSize: 14 }}>{getDomainIcon(item.result.domain)}</Text>
+            </View>
+            <View>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#0F172A' }}>{item.result.domain}</Text>
+              <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>{formatDate(item.createdAt)}</Text>
+            </View>
           </View>
-          <Text className="text-xs font-medium text-slate-400">{formatDate(item.createdAt)}</Text>
+          <SeverityBadge severity={item.result.severity} />
         </View>
         
-        <Text className="text-sm font-medium text-slate-800 mb-4 leading-relaxed" numberOfLines={2}>
-          "{item.contentPreview}"
+        {/* Preview */}
+        <Text style={{ fontSize: 13, color: '#475569', lineHeight: 20, marginBottom: 14 }} numberOfLines={2}>
+          {item.contentPreview}
         </Text>
         
-        <View className="flex-row items-center justify-between pt-4 border-t border-slate-100">
-          <SeverityBadge severity={item.result.severity} />
+        {/* Key Insight Preview */}
+        <View style={{ 
+          backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12, 
+          borderWidth: 1, borderColor: '#F1F5F9', marginBottom: 14,
+        }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Key Insight</Text>
+          <Text style={{ fontSize: 12, color: '#475569', lineHeight: 17 }} numberOfLines={2}>{item.result.key_insight}</Text>
+        </View>
+        
+        {/* Footer */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#4F46E5' }}>View Report →</Text>
+          </View>
           <TouchableOpacity 
-            onPress={() => handleDeleteItem(item.id)}
-            className="px-3 py-1.5 bg-red-50 rounded-lg border border-red-100"
+            onPress={(e) => { e.stopPropagation?.(); handleDeleteItem(item.id); }}
+            style={{
+              paddingHorizontal: 12, paddingVertical: 6,
+              backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA',
+              borderRadius: 8,
+            }}
           >
-            <Text className="text-[10px] text-red-600 font-bold uppercase tracking-wider">Delete</Text>
+            <Text style={{ fontSize: 11, color: '#DC2626', fontWeight: '700' }}>Delete</Text>
           </TouchableOpacity>
         </View>
       </AppCard>
@@ -95,16 +135,24 @@ export default function HistoryScreen() {
 
   return (
     <ScreenContainer>
-      <AppHeader title="Analysis History" showBack />
-      
-      {history.length > 0 && (
-        <View className="flex-row justify-between items-center mb-4 px-2 mt-2">
-          <Text className="text-sm font-bold text-slate-500 uppercase tracking-wider">{history.length} Saved Analyses</Text>
-          <TouchableOpacity onPress={handleClearHistory} className="bg-red-50 border border-red-100 px-3 py-1.5 rounded-full">
-            <Text className="text-xs font-bold text-red-600 uppercase tracking-wider">Clear All</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <AppHeader 
+        title="History" 
+        showBack 
+        subtitle={history.length > 0 ? `${history.length} saved analyses` : undefined}
+        rightAction={
+          history.length > 0 ? (
+            <TouchableOpacity 
+              onPress={handleClearHistory}
+              style={{
+                backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA',
+                paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+              }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#DC2626' }}>Clear All</Text>
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
 
       <FlatList
         data={history}
@@ -114,19 +162,26 @@ export default function HistoryScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           !isLoading ? (
-            <View className="flex-1 items-center justify-center mt-20">
-              <View className="w-20 h-20 bg-slate-100 rounded-3xl items-center justify-center mb-6 border border-slate-200">
-                <Text className="text-3xl">📭</Text>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 80 }}>
+              <View style={{
+                width: 80, height: 80, borderRadius: 24,
+                backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0',
+                alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+              }}>
+                <Text style={{ fontSize: 36 }}>📭</Text>
               </View>
-              <Text className="text-xl font-extrabold text-slate-800 mb-3">No History</Text>
-              <Text className="text-slate-500 text-sm mb-8 text-center px-6 leading-relaxed">
-                You haven't run any analyses yet. Your saved results will elegantly appear here.
+              <Text style={{ fontSize: 20, fontWeight: '800', color: '#0F172A', marginBottom: 8 }}>No History Yet</Text>
+              <Text style={{ 
+                fontSize: 14, color: '#94A3B8', textAlign: 'center', 
+                marginBottom: 32, paddingHorizontal: 32, lineHeight: 22 
+              }}>
+                Run your first analysis and results will appear here for future reference.
               </Text>
-              <AppButton title="Start New Analysis" onPress={() => router.replace('/input')} className="w-full" />
+              <AppButton title="Start Analysis" icon="⚡" onPress={() => router.replace('/input')} />
             </View>
           ) : (
-            <View className="flex-1 items-center justify-center mt-20">
-              <Text className="text-slate-500 text-sm font-medium">Loading history...</Text>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 80 }}>
+              <Text style={{ fontSize: 14, color: '#94A3B8', fontWeight: '500' }}>Loading history...</Text>
             </View>
           )
         }

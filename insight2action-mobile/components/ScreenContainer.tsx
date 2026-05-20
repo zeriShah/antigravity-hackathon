@@ -5,23 +5,26 @@ interface ScreenContainerProps {
   scroll?: boolean;
   className?: string;
   keyboardAvoid?: boolean;
+  noPadding?: boolean;
 }
 
-export function ScreenContainer({ children, scroll = false, className = '', keyboardAvoid = false }: ScreenContainerProps) {
+export function ScreenContainer({ children, scroll = false, className = '', keyboardAvoid = false, noPadding = false }: ScreenContainerProps) {
+  const horizontalPadding = noPadding ? 0 : 24;
+  
   const content = scroll ? (
     <ScrollView 
-      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingBottom: 32 }} 
+      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: horizontalPadding, paddingBottom: 40 }} 
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
       {children}
     </ScrollView>
   ) : (
-    <View className="flex-1 px-5 pb-8">{children}</View>
+    <View style={{ flex: 1, paddingHorizontal: horizontalPadding, paddingBottom: 32 }}>{children}</View>
   );
 
   return (
-    <SafeAreaView className={`flex-1 bg-slate-50 ${className}`}>
+    <SafeAreaView className={className} style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       {keyboardAvoid ? (
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 

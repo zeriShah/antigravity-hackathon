@@ -7,17 +7,42 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { AppHeader } from '../components/AppHeader';
 import { AppButton } from '../components/AppButton';
+import { AppCard } from '../components/AppCard';
+import { setTempFile } from '../lib/tempStore';
+
+// All supported file types
+const SUPPORTED_TYPES = [
+  'text/plain', 'text/csv', 'text/markdown', 'text/html', 'text/xml',
+  'application/json', 'application/pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/xml', 'text/tab-separated-values',
+  'application/x-yaml', 'text/yaml',
+  '*/*', // Fallback
+];
+
+const FILE_CATEGORIES = [
+  { label: 'Documents', exts: '.txt, .pdf, .docx, .doc, .md', icon: '📄' },
+  { label: 'Spreadsheets', exts: '.csv, .xlsx, .xls, .tsv', icon: '📊' },
+  { label: 'Data', exts: '.json, .xml, .yaml, .yml', icon: '🗂️' },
+  { label: 'Code & Logs', exts: '.log, .py, .js, .sql', icon: '💻' },
+];
 
 export default function InputScreen() {
   const router = useRouter();
   const [text, setText] = useState('');
   const [fileName, setFileName] = useState<string | null>(null);
+  const [fileRef, setFileRef] = useState<any>(null);
+  const [uploadMode, setUploadMode] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const sampleInputs = [
-    { label: 'Cybersecurity', text: 'The firewall is logging suspicious packets from unknown IP addresses trying to guess admin passwords.' },
-    { label: 'Logistics', text: 'Our primary warehouse is experiencing severe shipping delays for incoming orders.' },
-    { label: 'Education', text: 'Student attendance has dropped significantly before the upcoming final exam.' },
+    { label: '🔒 Cybersecurity', text: 'The firewall is logging suspicious packets from unknown IP addresses trying to guess admin passwords. Multiple brute-force attempts detected in the last 24 hours targeting the admin portal. Response time from security team has been delayed.' },
+    { label: '📦 Logistics', text: 'Our primary warehouse is experiencing severe shipping delays. Order fulfillment rate dropped from 98% to 72% this week. Three delivery trucks are out of service and the backup fleet is at capacity. Customer complaints have increased by 45%.' },
+    { label: '🏥 Healthcare', text: 'Patient wait times in the ER have increased by 40% over the past month. Staff shortages are contributing to longer treatment cycles. Two departments reported equipment maintenance backlogs affecting routine procedures.' },
   ];
 
   const handleAnalyze = async () => {
@@ -25,12 +50,11 @@ export default function InputScreen() {
       setErrorMsg('Please enter some content to analyze.');
       return;
     }
-    
     Keyboard.dismiss();
     try {
-      // Store the potentially large text file in local storage instead of URL params
-      // Browser URLs have character limits and will crash on 100KB files.
       await AsyncStorage.setItem('@temp_analysis_content', text);
+      // Store file ref in memory (File objects can't be serialized to JSON)
+      setTempFile(fileRef);
       router.push('/analyzing');
     } catch (e) {
       setErrorMsg('Failed to process the input text.');
@@ -39,34 +63,42 @@ export default function InputScreen() {
 
   const handleFileUpload = async () => {
     try {
-      // 1. Open system file picker for .txt files
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['text/plain'], // Only allow .txt files
+        type: SUPPORTED_TYPES,
         copyToCacheDirectory: true,
       });
 
-      // User cancelled picker
-      if (result.canceled) {
-        return;
-      }
+      if (result.canceled) return;
 
       const file = result.assets[0];
       
-      // 2. Validate file size (100 KB limit = 100 * 1024 bytes)
-      if (file.size && file.size > 102400) {
-        setErrorMsg('This file is too large for the MVP. Please upload a smaller TXT file under 100 KB.');
+      // 2MB limit
+      if (file.size && file.size > 2 * 1024 * 1024) {
+        setErrorMsg('File too large. Maximum size is 2MB.');
         return;
       }
 
-      // 3. Read the file content carefully based on the platform
-      let fileContent = '';
+      // Determine if it's a text-readable file or binary
+      const ext = (file.name || '').split('.').pop()?.toLowerCase() || '';
+      const textExts = ['txt', 'csv', 'json', 'md', 'log', 'xml', 'html', 'htm', 'tsv', 'yaml', 'yml', 'ini', 'cfg', 'conf', 'py', 'js', 'ts', 'sql', 'r'];
+      const binaryExts = ['xlsx', 'xls', 'docx', 'doc', 'pdf', 'pptx', 'ppt'];
       
+      if (binaryExts.includes(ext)) {
+        // For binary files, we'll send directly to the file upload endpoint
+        setFileName(file.name);
+        setFileRef({ uri: file.uri, name: file.name, type: file.mimeType || 'application/octet-stream', file: (file as any).file || null });
+        setText(`[File uploaded: ${file.name}]\n\nThis file will be processed by our AI backend for text extraction and analysis.`);
+        setUploadMode(true);
+        setErrorMsg('');
+        return;
+      }
+
+      // Text-based files: read content
+      let fileContent = '';
       if (Platform.OS === 'web') {
-        // On web, DocumentPicker provides the native Web File object
-        if (file.file) {
-          fileContent = await (file.file as any).text();
+        if ((file as any).file) {
+          fileContent = await ((file as any).file as File).text();
         } else if (file.uri) {
-          // Fallback if we only have the blob URI
           const response = await fetch(file.uri);
           fileContent = await response.text();
         } else {
@@ -74,119 +106,163 @@ export default function InputScreen() {
           return;
         }
       } else {
-        // On iOS/Android, use expo-file-system
         if (!file.uri) {
           setErrorMsg('Failed to access the selected file.');
           return;
         }
-        fileContent = await FileSystem.readAsStringAsync(file.uri, {
-          encoding: 'utf8',
-        });
+        fileContent = await FileSystem.readAsStringAsync(file.uri, { encoding: 'utf8' });
       }
 
-      // 4. Validate content is not empty
       if (!fileContent.trim()) {
         setErrorMsg('The selected file is empty.');
         return;
       }
 
-      // 5. Success: update text and filename state
       setText(fileContent);
       setFileName(file.name);
+      setFileRef(null);
+      setUploadMode(false);
       setErrorMsg('');
-
     } catch (error) {
       console.error('File upload error:', error);
-      setErrorMsg('Failed to read the file. Ensure it is a valid .txt file.');
+      setErrorMsg('Failed to read the file. Please try another file.');
     }
   };
 
   const clearFile = () => {
     setFileName(null);
+    setFileRef(null);
     setText('');
+    setUploadMode(false);
     setErrorMsg('');
   };
 
   return (
-    <ScreenContainer keyboardAvoid>
-      <AppHeader title="New Analysis" showBack subtitle="Paste content or upload a .txt file" />
+    <ScreenContainer keyboardAvoid scroll>
+      <AppHeader title="New Analysis" showBack subtitle="Paste content or upload any file" />
       
-      <View className="flex-1 mt-2">
-        <View className="flex-row flex-wrap mb-4">
+      <View style={{ flex: 1, marginTop: 4 }}>
+        {/* Sample Quick Inputs */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
           {sampleInputs.map((sample, idx) => (
             <TouchableOpacity 
               key={idx}
               onPress={() => {
                 setText(sample.text);
                 setFileName(null);
+                setFileRef(null);
+                setUploadMode(false);
                 setErrorMsg('');
               }}
-              className="bg-indigo-50 border border-indigo-100 rounded-full px-3 py-1.5 mr-2 mb-2"
+              style={{ 
+                backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#C7D2FE',
+                borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8, marginBottom: 8,
+              }}
             >
-              <Text className="text-xs font-semibold text-indigo-700">{sample.label}</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#4F46E5' }}>{sample.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Upload File Section */}
-        <View className="flex-row items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 mb-4 shadow-sm shadow-slate-200/50">
-          <View className="flex-1 mr-4">
-            <Text className="text-sm font-bold text-slate-800 mb-1">
-              Upload TXT File
-            </Text>
-            {fileName ? (
-              <Text className="text-xs text-emerald-600 font-medium" numberOfLines={1}>
-                Loaded: {fileName}
-              </Text>
-            ) : (
-              <Text className="text-xs text-slate-500">
-                Upload a .txt report, log, complaint, or policy note.
-              </Text>
-            )}
+        {/* File Upload Card */}
+        <AppCard elevated>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1, marginRight: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                <Text style={{ fontSize: 18, marginRight: 8 }}>📎</Text>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#0F172A' }}>Upload File</Text>
+              </View>
+              {fileName ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#16A34A', marginRight: 8 }} />
+                  <Text style={{ fontSize: 12, color: '#16A34A', fontWeight: '600' }} numberOfLines={1}>
+                    {fileName}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={{ fontSize: 12, color: '#94A3B8' }}>
+                  Supports all major formats
+                </Text>
+              )}
+            </View>
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {fileName && (
+                <TouchableOpacity onPress={clearFile} style={{ marginRight: 12 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#DC2626' }}>Remove</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity 
+                onPress={handleFileUpload}
+                style={{ 
+                  backgroundColor: '#4F46E5', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10,
+                  shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2, shadowRadius: 6, elevation: 2,
+                }}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>
+                  {fileName ? 'Replace' : 'Browse'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
           
-          <View className="flex-row items-center">
-            {fileName && (
-              <TouchableOpacity onPress={clearFile} className="mr-3">
-                <Text className="text-xs font-bold text-red-500 uppercase tracking-wider">Remove</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity 
-              onPress={handleFileUpload}
-              className="bg-slate-100 px-4 py-2 rounded-xl border border-slate-200"
-            >
-              <Text className="text-sm font-bold text-slate-700">{fileName ? 'Replace' : 'Upload'}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          {/* Supported formats */}
+          {!fileName && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: '#F1F5F9' }}>
+              {FILE_CATEGORIES.map((cat, i) => (
+                <View key={i} style={{ 
+                  flexDirection: 'row', alignItems: 'center', 
+                  marginRight: 16, marginBottom: 6,
+                }}>
+                  <Text style={{ fontSize: 12, marginRight: 4 }}>{cat.icon}</Text>
+                  <Text style={{ fontSize: 11, color: '#94A3B8', fontWeight: '500' }}>{cat.exts}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </AppCard>
 
-        {/* Manual Text Input Area */}
-        <View className="flex-1 mb-4 relative">
+        {/* Text Input Area */}
+        <View style={{ flex: 1, marginTop: 4, marginBottom: 12, minHeight: 200 }}>
           <TextInput
-            className={`flex-1 bg-white border ${errorMsg ? 'border-red-300' : 'border-slate-200'} rounded-3xl p-5 text-base text-slate-800 text-top shadow-sm shadow-slate-200/50`}
-            style={{ textAlignVertical: 'top' }}
+            style={{
+              flex: 1, backgroundColor: '#FFFFFF', 
+              borderWidth: 1, borderColor: errorMsg ? '#FECACA' : '#E2E8F0',
+              borderRadius: 16, padding: 20, fontSize: 15, color: '#0F172A',
+              textAlignVertical: 'top', lineHeight: 22, minHeight: 200,
+              shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.03, shadowRadius: 6,
+            }}
             multiline
-            placeholder="Paste text directly or use the upload button above..."
-            placeholderTextColor="#94a3b8"
+            placeholder="Paste your text, report, or data here..."
+            placeholderTextColor="#CBD5E1"
             value={text}
             onChangeText={(val) => {
               setText(val);
-              // If user manually edits, we clear the filename to indicate it's no longer purely the original file
-              if (fileName) setFileName(null);
+              if (fileName) { setFileName(null); setFileRef(null); setUploadMode(false); }
               if (errorMsg) setErrorMsg('');
             }}
+            editable={!uploadMode}
           />
-          <View className="absolute bottom-4 right-5 bg-white/80 px-2 rounded">
-            <Text className="text-xs font-medium text-slate-400">{text.length} chars</Text>
+          <View style={{ position: 'absolute', bottom: 12, right: 16, backgroundColor: '#FFFFFF', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: '#CBD5E1' }}>{text.length} chars</Text>
           </View>
         </View>
         
         {errorMsg ? (
-          <Text className="text-red-500 text-sm mb-4 font-medium px-2">{errorMsg}</Text>
+          <View style={{ 
+            backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', 
+            borderRadius: 10, padding: 12, marginBottom: 12,
+          }}>
+            <Text style={{ color: '#DC2626', fontSize: 13, fontWeight: '600' }}>⚠️  {errorMsg}</Text>
+          </View>
         ) : null}
 
         <AppButton 
-          title="Analyze Content" 
+          title={uploadMode ? "Analyze File" : "Analyze Content"}
+          icon="🔍"
+          size="lg"
           onPress={handleAnalyze} 
           disabled={text.trim().length === 0}
         />
