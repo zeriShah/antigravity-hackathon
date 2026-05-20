@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { AnalyzeRequest, AnalyzeResponse } from './types';
+import { AnalyzeRequest, AnalyzeResponse, SimulateCustomActionRequest, RegenerateActionRequest, RegenerateActionResponse, SimulationMock } from './types';
 
 /**
  * Configure the Backend URL based on the environment.
@@ -118,6 +118,56 @@ export async function analyzeFile(file: { uri: string; name: string; type: strin
     return data;
   } catch (error) {
     console.error('Failed to analyze file:', error);
+    throw error;
+  }
+}
+
+export async function simulateCustomAction(analysisId: string, customAction: string): Promise<SimulationMock> {
+  try {
+    const payload: SimulateCustomActionRequest = { 
+      analysis_id: analysisId, 
+      custom_action: customAction 
+    };
+    
+    const response = await fetch(`${API_BASE_URL}/simulate-custom-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API Error (${response.status}): ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to simulate custom action:', error);
+    throw error;
+  }
+}
+
+export async function regenerateAction(analysisId: string, feedback: string): Promise<RegenerateActionResponse> {
+  try {
+    const payload: RegenerateActionRequest = { 
+      analysis_id: analysisId, 
+      feedback 
+    };
+    
+    const response = await fetch(`${API_BASE_URL}/regenerate-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API Error (${response.status}): ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to regenerate action:', error);
     throw error;
   }
 }

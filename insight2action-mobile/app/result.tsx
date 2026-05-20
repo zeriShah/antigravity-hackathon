@@ -1,4 +1,6 @@
-import { View, Text, TouchableOpacity, Alert, Platform, Share } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Platform, Share, Modal, TextInput, ActivityIndicator } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { AppHeader } from '../components/AppHeader';
@@ -9,6 +11,7 @@ import { ConfidenceBar } from '../components/ConfidenceBar';
 import { AgentTrace } from '../components/AgentTrace';
 import { ExecutiveSummaryCard } from '../components/ExecutiveSummaryCard';
 import { AnalyzeResponse } from '../lib/types';
+import { simulateCustomAction, regenerateAction } from '../lib/api';
 import { useState } from 'react';
 
 export default function ResultScreen() {
@@ -17,14 +20,93 @@ export default function ResultScreen() {
   const [activeTab, setActiveTab] = useState<'overview' | 'insights' | 'actions' | 'simulation'>('overview');
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
   
-  let result: AnalyzeResponse | null = null;
-  try {
-    if (params.resultData && typeof params.resultData === 'string') {
-      result = JSON.parse(params.resultData);
+  const [currentResult, setCurrentResult] = useState<AnalyzeResponse | null>(() => {
+    try {
+      if (params.resultData && typeof params.resultData === 'string') {
+        return JSON.parse(params.resultData);
+      }
+    } catch (e) {
+      console.error("Failed to parse result data", e);
     }
-  } catch (e) {
-    console.error("Failed to parse result data", e);
-  }
+    return null;
+  });
+  
+  const result = currentResult;
+
+  const [isModifyModalVisible, setIsModifyModalVisible] = useState(false);
+  const [modifiedActionText, setModifiedActionText] = useState("");
+  const [showAlternatives, setShowAlternatives] = useState(false);
+  const [decisionSource, setDecisionSource] = useState<"AI Recommendation" | "User Modified Action" | "Alternative Action">("AI Recommendation");
+  const [feedbackText, setFeedbackText] = useState("");
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
+  const handleApproveAction = () => {
+    setActiveTab('simulation');
+    setDecisionSource('AI Recommendation');
+  };
+
+  const handleModifyAction = () => {
+    setModifiedActionText(result?.recommended_action || "");
+    setIsModifyModalVisible(true);
+  };
+
+  const handleSaveAndSimulate = async () => {
+    if (!result || !modifiedActionText.trim()) return;
+    setIsSimulating(true);
+    try {
+      const newSim = await simulateCustomAction(params.id as string || "mock-id", modifiedActionText);
+      setCurrentResult({
+        ...result,
+        simulation: newSim
+      });
+      setDecisionSource('User Modified Action');
+      setIsModifyModalVisible(false);
+      setActiveTab('simulation');
+    } catch (e) {
+      Alert.alert("Simulation Failed", String(e));
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  const handleSimulateAlternative = async (altAction: string) => {
+    if (!result) return;
+    setIsSimulating(true);
+    try {
+      const newSim = await simulateCustomAction(params.id as string || "mock-id", altAction);
+      setCurrentResult({
+        ...result,
+        simulation: newSim
+      });
+      setDecisionSource('Alternative Action');
+      setActiveTab('simulation');
+    } catch (e) {
+      Alert.alert("Simulation Failed", String(e));
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  const handleRegenerateAction = async () => {
+    if (!result || !feedbackText.trim()) return;
+    setIsRegenerating(true);
+    try {
+      const res = await regenerateAction(params.id as string || "mock-id", feedbackText);
+      setCurrentResult({
+        ...result,
+        recommended_action: res.recommended_action,
+        why_this_action: res.why_this_action,
+        alternative_actions: res.alternative_actions
+      });
+      setFeedbackText("");
+      setShowAlternatives(false); 
+    } catch (e) {
+      Alert.alert("Regeneration Failed", String(e));
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
 
   if (!result) {
     return (
@@ -124,6 +206,86 @@ export default function ResultScreen() {
           <Text style={{ fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>Primary Recommendation</Text>
         </View>
         <Text style={{ fontSize: 16, color: '#FFFFFF', lineHeight: 24, fontWeight: '700' }}>{result!.recommended_action}</Text>
+      </View>
+
+      {/* Why This Action? (Step 7) */}
+      {result!.why_this_action && (
+        <AppCard elevated>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+            <Text style={{ fontSize: 14, marginRight: 8 }}>🤔</Text>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#0F172A' }}>Why This Action?</Text>
+          </View>
+          <Text style={{ fontSize: 14, color: '#475569', lineHeight: 22 }}>{result!.why_this_action}</Text>
+        </AppCard>
+      )}
+
+      {/* Decision Control (Step 7) */}
+      <View style={{ marginBottom: 16 }}>
+        <Text style={{ fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 10, paddingHorizontal: 4 }}>
+          Decision Control
+        </Text>
+        <View style={{ gap: 8 }}>
+          <TouchableOpacity
+            onPress={handleApproveAction}
+            style={{ backgroundColor: '#10B981', padding: 14, borderRadius: 12, alignItems: 'center' }}
+          >
+            <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>✓ Approve Action</Text>
+          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              onPress={handleModifyAction}
+              style={{ flex: 1, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#CBD5E1', padding: 14, borderRadius: 12, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#334155', fontWeight: '700', fontSize: 13 }}>✏️ Modify Action</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowAlternatives(!showAlternatives)}
+              style={{ flex: 1, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', padding: 14, borderRadius: 12, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 13 }}>✖ Reject & Suggest</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Alternative Actions */}
+        {showAlternatives && result!.alternative_actions && (
+          <AppCard elevated accent style={{ marginTop: 12, borderColor: '#FECACA' }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 12 }}>Alternative Actions</Text>
+            <View style={{ gap: 10 }}>
+              {result!.alternative_actions.map((alt, idx) => (
+                <View key={idx} style={{ backgroundColor: '#F8FAFC', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#F1F5F9' }}>
+                  <Text style={{ fontSize: 13, color: '#334155', marginBottom: 10 }}>{alt}</Text>
+                  <TouchableOpacity
+                    onPress={() => handleSimulateAlternative(alt)}
+                    disabled={isSimulating}
+                    style={{ backgroundColor: '#4F46E5', padding: 8, borderRadius: 6, alignItems: 'center', opacity: isSimulating ? 0.7 : 1 }}
+                  >
+                    <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '600' }}>Simulate This Action</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+            
+            {/* Feedback for new alternatives */}
+            <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9' }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: '#64748B', marginBottom: 8 }}>None of these work? Suggest new alternatives:</Text>
+              <TextInput
+                style={{ backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, padding: 10, fontSize: 13, color: '#0F172A', minHeight: 60, textAlignVertical: 'top', marginBottom: 10 }}
+                multiline
+                placeholder="e.g. Suggest a lower-cost alternative."
+                value={feedbackText}
+                onChangeText={setFeedbackText}
+              />
+              <TouchableOpacity
+                onPress={handleRegenerateAction}
+                disabled={isRegenerating || !feedbackText.trim()}
+                style={{ backgroundColor: '#0F172A', padding: 10, borderRadius: 8, alignItems: 'center', opacity: (isRegenerating || !feedbackText.trim()) ? 0.5 : 1 }}
+              >
+                {isRegenerating ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '600' }}>Regenerate Alternatives</Text>}
+              </TouchableOpacity>
+            </View>
+          </AppCard>
+        )}
       </View>
 
       {/* Data Quality */}
@@ -285,6 +447,15 @@ export default function ResultScreen() {
 
     return (
       <View>
+        {/* Decision Source Banner */}
+        <View style={{ backgroundColor: '#EEF2FF', padding: 12, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#C7D2FE', flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontSize: 16, marginRight: 8 }}>ℹ️</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#4F46E5', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Simulation Source</Text>
+            <Text style={{ fontSize: 13, color: '#312E81', fontWeight: '600' }}>{decisionSource}</Text>
+          </View>
+        </View>
+
         <ExecutiveSummaryCard
           domain_label={result!.domain}
           confidence={result!.confidence}
@@ -423,68 +594,109 @@ export default function ResultScreen() {
           : { bg: '#FEFCE8', border: '#FEF08A', text: '#CA8A04' };
 
         const handleExport = async () => {
-          let content = `# Action Pack: ${pack.action_title}\n\n`;
-          content += `**Priority:** ${pack.priority}\n`;
-          content += `**Approval Status:** ${currentStatus}\n`;
-          content += `**Responsible Team:** ${pack.responsible_team}\n`;
-          content += `**Estimated Completion:** ${pack.estimated_completion}\n\n`;
-          
-          content += `## Summary\n${pack.action_summary}\n\n`;
-          
-          content += `## Generated Artifact (${pack.generated_artifact.type})\n`;
-          content += `**${pack.generated_artifact.title}**\n${pack.generated_artifact.content}\n\n`;
-          
-          content += `## Next Steps\n`;
-          pack.next_steps.forEach((step, idx) => {
-            content += `${idx + 1}. ${step}\n`;
-          });
-          
-          if (result!.counterfactual) {
-            content += `\n## Counterfactual Comparison\n`;
-            content += `**If Action Taken:**\n`;
-            content += `- Summary: ${result!.counterfactual.if_action_taken.summary}\n`;
-            content += `- Projected Outcome: ${result!.counterfactual.if_action_taken.projected_outcome}\n`;
-            content += `**If No Action:**\n`;
-            content += `- Summary: ${result!.counterfactual.if_no_action.summary}\n`;
-            content += `- Projected Outcome: ${result!.counterfactual.if_no_action.projected_outcome}\n`;
-          }
-          
-          const sim = result!.simulation as any;
-          if (sim && sim.before_state && sim.after_state) {
-            content += `\n## Simulation Metrics\n`;
-            content += `**Before State:**\n`;
-            Object.entries(sim.before_state).forEach(([k, v]) => {
-              content += `- ${k}: ${v}\n`;
-            });
-            content += `**After State:**\n`;
-            Object.entries(sim.after_state).forEach(([k, v]) => {
-              content += `- ${k}: ${v}\n`;
-            });
-          }
+          try {
+            // Build HTML content for PDF
+            let htmlContent = `
+              <html>
+                <head>
+                  <style>
+                    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color: #333; }
+                    h1 { color: #4F46E5; }
+                    h2 { color: #1E3A8A; border-bottom: 1px solid #E2E8F0; padding-bottom: 5px; margin-top: 20px; }
+                    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+                    .priority-high { background: #FEE2E2; color: #DC2626; }
+                    .priority-med { background: #FEF3C7; color: #D97706; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #E2E8F0; }
+                    th { background-color: #F8FAFC; }
+                  </style>
+                </head>
+                <body>
+                  <h1>Action Pack: ${pack.action_title}</h1>
+                  <p><span class="badge ${pack.priority.toLowerCase() === 'high' || pack.priority.toLowerCase() === 'critical' ? 'priority-high' : 'priority-med'}">${pack.priority} Priority</span></p>
+                  
+                  <table>
+                    <tr><th>Approval Status</th><td>${currentStatus}</td></tr>
+                    <tr><th>Responsible Team</th><td>${pack.responsible_team}</td></tr>
+                    <tr><th>Estimated Completion</th><td>${pack.estimated_completion}</td></tr>
+                  </table>
 
-          if (Platform.OS === 'web') {
-            try {
-              if (navigator.share) {
-                await navigator.share({
-                  title: 'Action Pack',
-                  text: content
-                });
+                  <h2>Summary</h2>
+                  <p>${pack.action_summary}</p>
+
+                  <h2>Generated Artifact (${pack.generated_artifact.type})</h2>
+                  <h3>${pack.generated_artifact.title}</h3>
+                  <p>${pack.generated_artifact.content}</p>
+
+                  <h2>Next Steps</h2>
+                  <ol>
+                    ${pack.next_steps.map(step => `<li>${step}</li>`).join('')}
+                  </ol>
+            `;
+
+            if (result!.counterfactual) {
+              htmlContent += `
+                <h2>Counterfactual Comparison</h2>
+                <h3>If Action Taken:</h3>
+                <ul>
+                  <li><b>Summary:</b> ${result!.counterfactual.if_action_taken.summary}</li>
+                  <li><b>Projected Outcome:</b> ${result!.counterfactual.if_action_taken.projected_outcome}</li>
+                </ul>
+                <h3>If No Action:</h3>
+                <ul>
+                  <li><b>Summary:</b> ${result!.counterfactual.if_no_action.summary}</li>
+                  <li><b>Projected Outcome:</b> ${result!.counterfactual.if_no_action.projected_outcome}</li>
+                </ul>
+              `;
+            }
+
+            const sim = result!.simulation as any;
+            if (sim && sim.before_state && sim.after_state) {
+              htmlContent += `
+                <h2>Simulation Metrics</h2>
+                <h3>Before State:</h3>
+                <ul>
+                  ${Object.entries(sim.before_state).map(([k, v]) => `<li><b>${k}:</b> ${v}</li>`).join('')}
+                </ul>
+                <h3>After State:</h3>
+                <ul>
+                  ${Object.entries(sim.after_state).map(([k, v]) => `<li><b>${k}:</b> ${v}</li>`).join('')}
+                </ul>
+              `;
+            }
+
+            htmlContent += `
+                </body>
+              </html>
+            `;
+
+            // Text fallback content for platforms that don't support PDF generation well
+            let textContent = `# Action Pack: ${pack.action_title}\n\n`;
+            textContent += `**Priority:** ${pack.priority}\n`;
+            textContent += `**Approval Status:** ${currentStatus}\n`;
+            textContent += `**Responsible Team:** ${pack.responsible_team}\n`;
+            textContent += `**Estimated Completion:** ${pack.estimated_completion}\n\n`;
+            textContent += `## Summary\n${pack.action_summary}\n\n`;
+            textContent += `## Next Steps\n`;
+            pack.next_steps.forEach((step, idx) => { textContent += `${idx + 1}. ${step}\n`; });
+
+            if (Platform.OS === 'web') {
+              // On web, just print the PDF
+              await Print.printAsync({ html: htmlContent });
+            } else {
+              // On native, generate PDF and share
+              const { uri } = await Print.printToFileAsync({ html: htmlContent });
+              const isSharingAvailable = await Sharing.isAvailableAsync();
+              
+              if (isSharingAvailable) {
+                await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
               } else {
-                await navigator.clipboard.writeText(content);
-                window.alert('Action Pack copied to clipboard.');
+                await Share.share({ message: textContent, title: 'Export Action Pack' });
               }
-            } catch (e) {
-              console.log('Error sharing', e);
             }
-          } else {
-            try {
-              await Share.share({
-                message: content,
-                title: 'Export Action Pack'
-              });
-            } catch (error: any) {
-              Alert.alert('Error', error.message);
-            }
+          } catch (error: any) {
+            console.error('Error generating PDF', error);
+            Alert.alert('Error', 'Failed to generate PDF: ' + error.message);
           }
         };
 
@@ -686,6 +898,41 @@ export default function ResultScreen() {
           onPress={() => router.replace('/')} 
         />
       </View>
+
+      {/* Modify Action Modal */}
+      <Modal
+        visible={isModifyModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsModifyModalVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#FFF', padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 16 }}>✏️ Modify Recommended Action</Text>
+            <TextInput
+              style={{ backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 14, fontSize: 15, color: '#0F172A', minHeight: 100, textAlignVertical: 'top', marginBottom: 20 }}
+              multiline
+              value={modifiedActionText}
+              onChangeText={setModifiedActionText}
+            />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => setIsModifyModalVisible(false)}
+                style={{ flex: 1, backgroundColor: '#F1F5F9', padding: 14, borderRadius: 12, alignItems: 'center' }}
+              >
+                <Text style={{ color: '#475569', fontWeight: '700', fontSize: 14 }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveAndSimulate}
+                disabled={isSimulating}
+                style={{ flex: 1, backgroundColor: '#4F46E5', padding: 14, borderRadius: 12, alignItems: 'center', opacity: isSimulating ? 0.7 : 1 }}
+              >
+                {isSimulating ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>Save & Simulate</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }

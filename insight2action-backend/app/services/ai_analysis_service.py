@@ -116,7 +116,13 @@ The JSON MUST match this exact schema:
         "description": "string - specific explanation for this factor's score"
       }
     ]
-  }
+  },
+  "why_this_action": "string - 1-2 sentences explaining why this specific action was chosen",
+  "alternative_actions": [
+    "string - alternative option 1",
+    "string - alternative option 2",
+    "string - alternative option 3"
+  ]
 }
 
 COUNTERFACTUAL RULES:
@@ -140,6 +146,10 @@ CONFIDENCE BREAKDOWN RULES:
 - Provide a clear 1-2 sentence reasoning for why the decision/recommendation is trusted.
 - Provide exactly 3 specific confidence factors (e.g. Evidence Strength, Source Reliability, Historical Alignment).
 - Score each factor from 0.0 to 1.0 based on how strongly it supports the decision.
+
+DECISION APPROVAL RULES:
+- Always generate why_this_action.
+- Always provide exactly 3 distinct alternative_actions in case the primary action is rejected.
 """
 
     response = openai_client.chat.completions.create(

@@ -252,6 +252,13 @@ def run_agentic_workflow(content: str) -> AnalyzeResponse:
     # 9. Confidence Breakdown Generator (Step 9)
     confidence_breakdown = generate_mock_confidence_breakdown(domain, severity, domain_result["domain_confidence"])
     
+    why_this_action = f"This action is recommended because {key_insight.lower()} which directly impacts {domain.lower()} performance."
+    alternative_actions = [
+        "Conduct a deeper investigation before taking action.",
+        "Escalate to senior management for review.",
+        "Implement a partial workaround to mitigate immediate risks."
+    ]
+
     # 10. Final Response Builder
     return AnalyzeResponse(
         domain=domain,
@@ -265,7 +272,31 @@ def run_agentic_workflow(content: str) -> AnalyzeResponse:
         projected_impact=projected_impact,
         action_pack=action_pack,
         confidence_breakdown=confidence_breakdown,
+        why_this_action=why_this_action,
+        alternative_actions=alternative_actions,
     )
+
+def run_custom_simulation(analysis_id: str, custom_action: str) -> SimulationMock:
+    # Minimal mock implementation for custom simulation
+    return SimulationMock(
+        type="custom_intervention",
+        title="Custom Action Simulation",
+        priority="High",
+        assigned_team="Cross-functional Team",
+        status="Pending Review",
+        description=f"Simulating custom action: {custom_action}"
+    )
+
+def run_regenerate_action(analysis_id: str, feedback: str) -> dict:
+    return {
+        "recommended_action": f"Adjusted action based on feedback: '{feedback}'",
+        "why_this_action": "This alternative was generated to address the user's specific feedback and constraints.",
+        "alternative_actions": [
+            "Explore vendor alternatives.",
+            "Adjust the implementation timeline.",
+            "Reallocate budget from other departments."
+        ]
+    }
 
 
 def generate_mock_action_pack(domain: str, severity: str, key_insight: str, recommended_action: str, priority: str) -> ActionPack:

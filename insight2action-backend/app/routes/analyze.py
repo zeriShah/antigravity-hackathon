@@ -4,8 +4,11 @@ import csv
 import logging
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import Optional
-from app.schemas.analysis import AnalyzeRequest, AnalyzeResponse
-from app.services.agent_orchestrator import run_agentic_workflow
+from app.schemas.analysis import (
+    AnalyzeRequest, AnalyzeResponse,
+    RegenerateActionRequest, RegenerateActionResponse
+)
+from app.services.agent_orchestrator import run_agentic_workflow, run_regenerate_action
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -172,3 +175,15 @@ async def analyze_file(
     
     response_data = run_agentic_workflow(enriched_content)
     return response_data
+
+@router.post("/regenerate-action", response_model=RegenerateActionResponse)
+async def regenerate_action(request: RegenerateActionRequest):
+    """
+    Regenerates the recommended action and alternatives based on user feedback.
+    """
+    try:
+        response_data = run_regenerate_action(request.analysis_id, request.feedback)
+        return response_data
+    except Exception as e:
+        logger.error(f"Error regenerating action: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to regenerate action: {str(e)}")

@@ -6,6 +6,19 @@ class AnalyzeRequest(BaseModel):
     file_name: Optional[str] = Field(None, description="Original file name if uploaded.")
     file_type: Optional[str] = Field(None, description="MIME type of the uploaded file.")
 
+class SimulateCustomActionRequest(BaseModel):
+    analysis_id: str
+    custom_action: str
+
+class RegenerateActionRequest(BaseModel):
+    analysis_id: str
+    feedback: str
+
+class RegenerateActionResponse(BaseModel):
+    recommended_action: str
+    why_this_action: Optional[str] = None
+    alternative_actions: Optional[List[str]] = None
+
 class SimulationMock(BaseModel):
     type: str
     title: str
@@ -85,3 +98,6 @@ class AnalyzeResponse(BaseModel):
     action_pack: Optional[ActionPack] = None
     # Step 9: Decision Confidence Breakdown
     confidence_breakdown: Optional[ConfidenceBreakdown] = None
+    # Step 7: Decision Approval
+    why_this_action: Optional[str] = None
+    alternative_actions: Optional[List[str]] = None

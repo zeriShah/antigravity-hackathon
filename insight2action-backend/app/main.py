@@ -6,7 +6,7 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import analyze
+from app.routes import analyze, simulate
 
 # Initialize the FastAPI application
 app = FastAPI(
@@ -24,8 +24,9 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-# Include the analyze router
+# Include the routers
 app.include_router(analyze.router)
+app.include_router(simulate.router)
 
 # Health check route
 @app.get("/")

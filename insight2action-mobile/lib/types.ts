@@ -4,6 +4,22 @@ export interface AnalyzeRequest {
   file_type?: string;
 }
 
+export interface SimulateCustomActionRequest {
+  analysis_id: string;
+  custom_action: string;
+}
+
+export interface RegenerateActionRequest {
+  analysis_id: string;
+  feedback: string;
+}
+
+export interface RegenerateActionResponse {
+  recommended_action: string;
+  why_this_action?: string;
+  alternative_actions?: string[];
+}
+
 export interface SimulationMock {
   type: string;
   title: string;
@@ -96,6 +112,9 @@ export interface AnalyzeResponse {
   action_pack?: ActionPack;
   // Step 9: Decision Confidence Breakdown
   confidence_breakdown?: ConfidenceBreakdown;
+  // Step 7: Decision Approval
+  why_this_action?: string;
+  alternative_actions?: string[];
 }
 
 export interface AnalysisHistoryItem {
