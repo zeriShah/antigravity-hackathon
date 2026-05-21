@@ -12,20 +12,20 @@ const getBaseUrl = () => {
   if (__DEV__) {
     if (Platform.OS === 'android') {
       // Android emulator maps 10.0.2.2 to the host machine's localhost
-      return 'http://10.0.2.2:8000';
+      return 'http://10.0.2.2:8000/api/v1';
     } else if (Platform.OS === 'web') {
       // Web browser can directly hit localhost
-      return 'http://localhost:8000';
+      return 'http://localhost:8000/api/v1';
     }
     
     // IMPORTANT: If you are running on a physical phone using Expo Go,
     // you must change this URL to your computer's actual local IP address!
-    // Example: return 'http://192.168.1.100:8000';
-    return 'http://localhost:8000'; 
+    // Example: return 'http://192.168.1.100:8000/api/v1';
+    return 'http://localhost:8000/api/v1'; 
   }
   
   // Production URL - Vercel deployment
-  return 'https://insight2action-backend.vercel.app';
+  return 'https://insight2action-backend.vercel.app/api/v1';
 };
 
 export const API_BASE_URL = getBaseUrl();

@@ -6,12 +6,12 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import analyze, simulate
+from app.routes import analyze, simulate, execute
 
 # Initialize the FastAPI application
 app = FastAPI(
-    title="Insight2Action AI Backend",
-    description="Backend API for converting unstructured content into clear decisions and simulated actions.",
+    title="Insight2Action API",
+    description="Backend for Insight2Action mobile application",
     version="1.0.0"
 )
 
@@ -25,13 +25,14 @@ app.add_middleware(
 )
 
 # Include the routers
-app.include_router(analyze.router)
-app.include_router(simulate.router)
+app.include_router(analyze.router, prefix="/api/v1", tags=["Analysis"])
+app.include_router(simulate.router, prefix="/api/v1", tags=["Simulation"])
+app.include_router(execute.router, prefix="/api/v1", tags=["Execution"])
 
 # Health check route
 @app.get("/")
 async def root():
     return {
         "status": "ok",
-        "message": "Insight2Action AI backend is running"
+        "message": "Insight2Action API is running."
     }

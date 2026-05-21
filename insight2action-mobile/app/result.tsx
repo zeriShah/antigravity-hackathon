@@ -10,6 +10,8 @@ import { SeverityBadge } from '../components/SeverityBadge';
 import { ConfidenceBar } from '../components/ConfidenceBar';
 import { AgentTrace } from '../components/AgentTrace';
 import { ExecutiveSummaryCard } from '../components/ExecutiveSummaryCard';
+import { AgentExecutionConsole } from '../components/AgentExecutionConsole';
+
 import { AnalyzeResponse } from '../lib/types';
 import { simulateCustomAction, regenerateAction } from '../lib/api';
 import { useState } from 'react';
@@ -40,6 +42,8 @@ export default function ResultScreen() {
   const [feedbackText, setFeedbackText] = useState("");
   const [isSimulating, setIsSimulating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isExecutionModalVisible, setIsExecutionModalVisible] = useState(false);
+
 
   const handleApproveAction = () => {
     setActiveTab('simulation');
@@ -623,54 +627,65 @@ export default function ResultScreen() {
                 <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Executive Summary</h3>
                 <p style="line-height: 1.6; color: #334155; font-size: 15px;">${pack.action_summary}</p>
 
-                <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Generated Artifact: ${pack.generated_artifact.type}</h3>
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 20px; border-radius: 8px; margin-top: 15px;">
-                  <h4 style="margin-top: 0; color: #0F172A;">${pack.generated_artifact.title}</h4>
-                  <p style="line-height: 1.6; color: #334155; margin-bottom: 0;">${pack.generated_artifact.content}</p>
+                <div style="page-break-inside: avoid; break-inside: avoid;">
+                  <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Generated Artifact: ${pack.generated_artifact.type}</h3>
+                  <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                    <h4 style="margin-top: 0; color: #0F172A;">${pack.generated_artifact.title}</h4>
+                    <p style="line-height: 1.6; color: #334155; margin-bottom: 0;">${pack.generated_artifact.content}</p>
+                  </div>
                 </div>
 
-                <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Actionable Next Steps</h3>
-                <ol style="line-height: 1.8; color: #334155; padding-left: 20px;">
-                  ${pack.next_steps.map(step => `<li style="margin-bottom: 8px;">${step}</li>`).join('')}
-                </ol>
+                <div style="page-break-inside: avoid; break-inside: avoid;">
+                  <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Actionable Next Steps</h3>
+                  <ol style="line-height: 1.8; color: #334155; padding-left: 20px;">
+                    ${pack.next_steps.map(step => `<li style="margin-bottom: 8px;">${step}</li>`).join('')}
+                  </ol>
+                </div>
+
             `;
 
             if (result!.counterfactual) {
               htmlContent += `
-                <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Counterfactual Analysis</h3>
-                <div style="display: flex; gap: 20px; margin-top: 15px;">
-                  <div style="flex: 1; background: #F0FDF4; border: 1px solid #BBF7D0; padding: 15px; border-radius: 8px;">
-                    <h4 style="color: #16A34A; margin-top: 0; margin-bottom: 10px;">If Action Taken</h4>
-                    <p style="font-size: 14px; margin-bottom: 8px;"><b>Summary:</b><br/>${result!.counterfactual.if_action_taken.summary}</p>
-                    <p style="font-size: 14px; margin-bottom: 0;"><b>Projected Outcome:</b><br/>${result!.counterfactual.if_action_taken.projected_outcome}</p>
-                  </div>
-                  <div style="flex: 1; background: #FEF2F2; border: 1px solid #FECACA; padding: 15px; border-radius: 8px;">
-                    <h4 style="color: #DC2626; margin-top: 0; margin-bottom: 10px;">If No Action</h4>
-                    <p style="font-size: 14px; margin-bottom: 8px;"><b>Summary:</b><br/>${result!.counterfactual.if_no_action.summary}</p>
-                    <p style="font-size: 14px; margin-bottom: 0;"><b>Projected Outcome:</b><br/>${result!.counterfactual.if_no_action.projected_outcome}</p>
+                <div style="page-break-inside: avoid; break-inside: avoid;">
+                  <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Counterfactual Analysis</h3>
+                  <div style="display: flex; gap: 20px; margin-top: 15px;">
+                    <div style="flex: 1; background: #F0FDF4; border: 1px solid #BBF7D0; padding: 15px; border-radius: 8px;">
+                      <h4 style="color: #16A34A; margin-top: 0; margin-bottom: 10px;">If Action Taken</h4>
+                      <p style="font-size: 14px; margin-bottom: 8px;"><b>Summary:</b><br/>${result!.counterfactual.if_action_taken.summary}</p>
+                      <p style="font-size: 14px; margin-bottom: 0;"><b>Projected Outcome:</b><br/>${result!.counterfactual.if_action_taken.projected_outcome}</p>
+                    </div>
+                    <div style="flex: 1; background: #FEF2F2; border: 1px solid #FECACA; padding: 15px; border-radius: 8px;">
+                      <h4 style="color: #DC2626; margin-top: 0; margin-bottom: 10px;">If No Action</h4>
+                      <p style="font-size: 14px; margin-bottom: 8px;"><b>Summary:</b><br/>${result!.counterfactual.if_no_action.summary}</p>
+                      <p style="font-size: 14px; margin-bottom: 0;"><b>Projected Outcome:</b><br/>${result!.counterfactual.if_no_action.projected_outcome}</p>
+                    </div>
                   </div>
                 </div>
+
               `;
             }
 
             const sim = result!.simulation as any;
             if (sim && sim.before_state && sim.after_state) {
               htmlContent += `
-                <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Simulation Metrics</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;">
-                  <tr style="background: #F8FAFC;">
-                    <th style="padding: 10px; border: 1px solid #E2E8F0; text-align: left;">Metric</th>
-                    <th style="padding: 10px; border: 1px solid #E2E8F0; text-align: left;">Before State</th>
-                    <th style="padding: 10px; border: 1px solid #E2E8F0; text-align: left;">After State</th>
-                  </tr>
-                  ${Object.keys(sim.before_state).map(k => `
-                    <tr>
-                      <td style="padding: 10px; border: 1px solid #E2E8F0; font-weight: 600; text-transform: capitalize;">${k.replace(/_/g, ' ')}</td>
-                      <td style="padding: 10px; border: 1px solid #E2E8F0; color: #DC2626;">${sim.before_state[k]}</td>
-                      <td style="padding: 10px; border: 1px solid #E2E8F0; color: #16A34A; font-weight: bold;">${sim.after_state[k] || 'N/A'}</td>
+                <div style="page-break-inside: avoid; break-inside: avoid;">
+                  <h3 style="color: #1E3A8A; border-bottom: 2px solid #EEF2FF; padding-bottom: 8px; margin-top: 30px;">Simulation Metrics</h3>
+                  <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;">
+                    <tr style="background: #F8FAFC;">
+                      <th style="padding: 10px; border: 1px solid #E2E8F0; text-align: left;">Metric</th>
+                      <th style="padding: 10px; border: 1px solid #E2E8F0; text-align: left;">Before State</th>
+                      <th style="padding: 10px; border: 1px solid #E2E8F0; text-align: left;">After State</th>
                     </tr>
-                  `).join('')}
-                </table>
+                    ${Object.keys(sim.before_state).map(k => `
+                      <tr>
+                        <td style="padding: 10px; border: 1px solid #E2E8F0; font-weight: 600; text-transform: capitalize;">${k.replace(/_/g, ' ')}</td>
+                        <td style="padding: 10px; border: 1px solid #E2E8F0; color: #DC2626;">${sim.before_state[k]}</td>
+                        <td style="padding: 10px; border: 1px solid #E2E8F0; color: #16A34A; font-weight: bold;">${sim.after_state[k] || 'N/A'}</td>
+                      </tr>
+                    `).join('')}
+                  </table>
+                </div>
+
               `;
             }
 
@@ -802,6 +817,16 @@ export default function ResultScreen() {
               {/* Action Buttons */}
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
                 <TouchableOpacity
+                  onPress={() => setIsExecutionModalVisible(true)}
+                  style={{
+                    width: '100%', paddingVertical: 14, borderRadius: 12, alignItems: 'center',
+                    backgroundColor: '#0F172A',
+                    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.5 }}>⚡ EXECUTE AUTONOMOUSLY</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                   onPress={() => setApprovalStatus(isApproved ? 'Pending Approval' : 'Approved')}
                   style={{
                     flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center',
@@ -823,6 +848,7 @@ export default function ResultScreen() {
                   <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569' }}>📤 Export Pack</Text>
                 </TouchableOpacity>
               </View>
+
             </AppCard>
           </View>
         );
@@ -976,6 +1002,26 @@ export default function ResultScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Execution Modal */}
+      <Modal
+        visible={isExecutionModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsExecutionModalVisible(false)}
+      >
+        <AgentExecutionConsole
+          domain={result!.domain}
+          actionTitle={result!.action_pack?.action_title || result!.recommended_action}
+          responsibleTeam={result!.action_pack?.responsible_team || 'Operations'}
+          onClose={() => setIsExecutionModalVisible(false)}
+          onComplete={() => {
+            setApprovalStatus('Executed');
+            setIsExecutionModalVisible(false);
+          }}
+        />
+      </Modal>
+
     </ScreenContainer>
   );
 }

@@ -1,4 +1,5 @@
-import { View, ScrollView, SafeAreaView, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, ScrollView, Platform, KeyboardAvoidingView, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ScreenContainerProps {
   children: React.ReactNode;
@@ -9,7 +10,13 @@ interface ScreenContainerProps {
 }
 
 export function ScreenContainer({ children, scroll = false, className = '', keyboardAvoid = false, noPadding = false }: ScreenContainerProps) {
+  const insets = useSafeAreaInsets();
   const horizontalPadding = noPadding ? 0 : 24;
+  
+  // Calculate top padding: use insets.top, but on Android add StatusBar height if insets.top is 0 or very small
+  const paddingTop = Platform.OS === 'android' 
+    ? Math.max(insets.top, StatusBar.currentHeight || 24) + 16 
+    : Math.max(insets.top, 20) + 8;
   
   const content = scroll ? (
     <ScrollView 
@@ -24,7 +31,7 @@ export function ScreenContainer({ children, scroll = false, className = '', keyb
   );
 
   return (
-    <SafeAreaView className={className} style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+    <View className={className} style={{ flex: 1, backgroundColor: '#F8FAFC', paddingTop }}>
       {keyboardAvoid ? (
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
@@ -35,6 +42,7 @@ export function ScreenContainer({ children, scroll = false, className = '', keyb
       ) : (
         content
       )}
-    </SafeAreaView>
+    </View>
   );
 }
+
