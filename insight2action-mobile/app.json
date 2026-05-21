@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Catalyst",
-    "slug": "insight2action-mobile",
+    "slug": "catalyst-ai",
     "version": "1.0.0",
     "scheme": "insight2action",
     "orientation": "portrait",
@@ -34,7 +34,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e6a18ce0-bbc1-4ce0-92b1-e81aa2316479"
+        "projectId": "4284487b-a626-4d83-b342-db3efbc36766"
       }
     },
     "owner": "uzishah"
